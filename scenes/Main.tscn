@@ -11,9 +11,14 @@
 [node name="Main" type="Node2D"]
 script = ExtResource("3")
 
-[node name="VaporwaveBackground" type="CanvasLayer" parent="."]
-layer = -1
+[node name="VaporwaveBackground" type="ColorRect" parent="."]
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.1, 0.05, 0.2, 1)
 script = ExtResource("7")
+z_index = -1
 
 [node name="NPCSpawner" type="Node2D" parent="."]
 script = ExtResource("2")
