@@ -5,17 +5,27 @@ extends Node2D
 signal on_wave_start(is_fake_out: bool)
 signal on_wave_end
 
-@export var speed: float = 60.0
-@export var wave_duration: float = 1.5
+# NPC Movement & Wave Timing Tuning
+@export var walk_speed: float = 60.0  # Units/sec moving left toward player (50-80 recommended)
+@export var wave_duration: float = 1.5  # Seconds an NPC waves (1.0-2.0 recommended)
+@export var fake_out_chance: float = 0.3  # Probability of fake-out (0.2-0.5 recommended)
 
 var is_waving: bool = false
 var is_fake_out: bool = false
 var waving_time: float = 0.0
+var npc_color: Color
 
 func _ready() -> void:
 	randomize()
-	# Randomly decide if this NPC waves or is a fake-out
-	is_fake_out = randf() > 0.7  # 30% chance of fake-out
+	# Randomly decide if this NPC waves or is a fake-out based on tuned chance
+	is_fake_out = randf() < fake_out_chance
+	
+	# Generate a unique pastel color for this NPC
+	npc_color = preload("res://scripts/procedural_sprite_gen.gd").get_random_pastel_color()
+	
+	# Update Body color to the new pastel color
+	if has_node("Body"):
+		$Body.color = npc_color
 	
 	# Start waving after a short delay
 	if has_node("WaveTimer"):
@@ -32,8 +42,8 @@ func _ready() -> void:
 			cs.shape = rect
 
 func _physics_process(delta: float) -> void:
-	# Walk left (toward the player at x=0)
-	position.x -= speed * delta
+	# Walk left (toward the player at x=0) using tuned walk speed
+	position.x -= walk_speed * delta
 	
 	# Update waving state
 	if is_waving:
