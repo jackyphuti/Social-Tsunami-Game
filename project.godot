@@ -1,0 +1,6 @@
+[gd_project]
+config_version=4
+
+[application]
+name="Social Tsunami"
+run/main_scene="res://scenes/Main.tscn"
