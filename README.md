@@ -10,9 +10,10 @@ Non-gamers: you **do not** need Godot or any coding tools installed to play!
 
 | Download Option | Link |
 |---|---|
-| 📦 **Windows Setup Wizard (.exe)** | [**Download Social_Tsunami_Setup.exe**](https://github.com/jackyphuti/Social-Tsunami-Game/releases/latest/download/Social_Tsunami_Setup.exe) |
-| 📁 **Portable Version (.zip)** | [**Download SocialTsunami_Portable.zip**](https://github.com/jackyphuti/Social-Tsunami-Game/releases/latest/download/SocialTsunami_Portable.zip) |
-| 🏷️ **Releases Page** | [**View All GitHub Releases**](https://github.com/jackyphuti/Social-Tsunami-Game/releases) |
+| 📦 **Windows Setup Wizard (.exe)** | [**Download Social_Tsunami_Setup.exe**](https://github.com/jackyphuti/Social-Tsunami-Game/releases/download/v1.0.0/Social_Tsunami_Setup.exe) |
+| 📁 **Portable Version (.zip)** | [**Download SocialTsunami_Portable.zip**](https://github.com/jackyphuti/Social-Tsunami-Game/releases/download/v1.0.0/SocialTsunami_Portable.zip) |
+| 🏷️ **Release v1.0.0 Page** | [**View Release v1.0.0 on GitHub**](https://github.com/jackyphuti/Social-Tsunami-Game/releases/tag/v1.0.0) |
+| 📜 **All Releases** | [**View All GitHub Releases**](https://github.com/jackyphuti/Social-Tsunami-Game/releases) |
 
 ---
 
