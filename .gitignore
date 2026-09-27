@@ -7,6 +7,7 @@
 dist/
 installer_output/
 *.exe
+*.zip
 
 # Godot-specific ignores
 .import/
