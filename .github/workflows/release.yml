@@ -1,0 +1,65 @@
+name: Build and Release Social Tsunami
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Godot Engine
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_win64.exe.zip" -OutFile "godot.zip"
+          Expand-Archive -Path "godot.zip" -DestinationPath "$env:LOCALAPPDATA\Godot"
+          $godotExe = (Get-ChildItem "$env:LOCALAPPDATA\Godot" -Filter "*win64.exe").FullName
+          echo "GODOT_EXE=$godotExe" >> $env:GITHUB_ENV
+
+      - name: Setup Inno Setup
+        shell: pwsh
+        run: |
+          choco install innosetup -y
+          echo "C:\Program Files (x86)\Inno Setup 6" >> $env:GITHUB_PATH
+
+      - name: Build Game PCK and Standalone
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path "dist"
+          & "$env:GODOT_EXE" --headless --export-pack "Windows Desktop" "dist/SocialTsunami.pck"
+          Copy-Item "$env:GODOT_EXE" "dist/SocialTsunami.exe" -Force
+          Compress-Archive -Path "dist/*" -DestinationPath "SocialTsunami_Portable.zip" -Force
+
+      - name: Compile Windows Setup Wizard
+        shell: pwsh
+        run: |
+          iscc setup.iss
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            installer_output/Social_Tsunami_Setup.exe
+            SocialTsunami_Portable.zip
+          name: Social Tsunami ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          body: |
+            ## 🌊 Social Tsunami - Master the Art of the Wave
+
+            ### 🚀 Quick Install (For Non-Gamers & Everyone)
+            1. Download **`Social_Tsunami_Setup.exe`** below.
+            2. Double-click the installer and follow the setup wizard (*Next -> Install -> Finish*).
+            3. A shortcut is placed on your **Desktop** and in your **Start Menu**!
+            4. Double-click the Desktop shortcut to play anytime.
+
+            ### 🎮 Portable Version
+            Download **`SocialTsunami_Portable.zip`**, unzip anywhere, and double-click **`SocialTsunami.exe`** to play instantly without installing!

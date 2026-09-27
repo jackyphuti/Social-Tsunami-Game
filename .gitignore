@@ -1,6 +1,12 @@
 # Godot 4+ specific ignores
 .godot/
 *.translation
+*.uid
+
+# Build artifacts & executables (uploaded to GitHub Releases)
+dist/
+installer_output/
+*.exe
 
 # Godot-specific ignores
 .import/

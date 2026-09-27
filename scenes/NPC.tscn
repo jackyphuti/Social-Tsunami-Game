@@ -1,27 +1,108 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
+
 [ext_resource type="Script" path="res://scripts/npc.gd" id="1"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1"]
+bg_color = Color(0.1, 0.05, 0.2, 0.9)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2, 0.9, 0.95, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [node name="NPC" type="Node2D"]
 script = ExtResource("1")
 
-[node name="Body" type="Polygon2D" parent="."]
-polygon = PackedVector2Array(-12, -24, 12, -24, 12, 24, -12, 24)
-color = Color(0.6, 0.7, 0.9, 1)
+[node name="BodyVisual" type="Node2D" parent="."]
 
-[node name="WaveArea" type="Area2D" parent="."]
+[node name="VIPGlow" type="Polygon2D" parent="BodyVisual"]
+visible = false
+color = Color(1, 0.85, 0.2, 0.3)
+polygon = PackedVector2Array(-24, -55, 24, -55, 30, 65, -30, 65)
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="WaveArea"]
+[node name="Legs" type="Polygon2D" parent="BodyVisual"]
+color = Color(0.15, 0.1, 0.25, 1)
+polygon = PackedVector2Array(-12, 20, 12, 20, 10, 54, 16, 54, 16, 60, 2, 60, 4, 26, -4, 26, -2, 60, -16, 60, -16, 54, -10, 54)
 
+[node name="Shoes" type="Polygon2D" parent="BodyVisual"]
+color = Color(0.95, 0.2, 0.6, 1)
+polygon = PackedVector2Array(2, 56, 18, 56, 20, 60, 0, 60, -6, 56, -18, 56, -20, 60, -2, 60)
 
-[node name="WaveTimer" type="Timer" parent="."]
-wait_time = 1.0
-one_shot = true
+[node name="Torso" type="Polygon2D" parent="BodyVisual"]
+color = Color(0.4, 0.8, 0.9, 1)
+polygon = PackedVector2Array(-14, -18, 14, -18, 12, 22, -12, 22)
 
-[node name="Label" type="Label" parent="."]
-offset_left = -20.0
-offset_top = -40.0
-offset_right = 20.0
-offset_bottom = -25.0
-text = "Wave"
+[node name="Head" type="Node2D" parent="BodyVisual"]
+position = Vector2(0, -32)
 
+[node name="Face" type="Polygon2D" parent="BodyVisual/Head"]
+color = Color(1, 0.85, 0.75, 1)
+polygon = PackedVector2Array(-11, -13, 11, -13, 11, 11, -11, 11)
 
+[node name="Hair" type="Polygon2D" parent="BodyVisual/Head"]
+color = Color(0.85, 0.2, 0.6, 1)
+polygon = PackedVector2Array(-14, -13, 14, -13, 12, -24, 0, -22, -12, -22)
+
+[node name="FaceLabel" type="Label" parent="BodyVisual/Head"]
+offset_left = -25.0
+offset_top = -8.0
+offset_right = 25.0
+offset_bottom = 12.0
+theme_override_colors/font_color = Color(0.1, 0.05, 0.15, 1)
+theme_override_font_sizes/font_size = 11
+text = "(•_•)"
+horizontal_alignment = 1
+
+[node name="Arm" type="Node2D" parent="BodyVisual"]
+position = Vector2(-12, -18)
+
+[node name="Visual" type="Polygon2D" parent="BodyVisual/Arm"]
+color = Color(0.4, 0.8, 0.9, 1)
+polygon = PackedVector2Array(-5, 0, 5, 0, 4, 30, -4, 30)
+
+[node name="Hand" type="Polygon2D" parent="BodyVisual/Arm"]
+color = Color(1, 0.85, 0.75, 1)
+polygon = PackedVector2Array(-5, 30, 5, 30, 6, 42, -6, 42)
+
+[node name="SpeechBubble" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_left = -70.0
+offset_top = -100.0
+offset_right = 70.0
+offset_bottom = -65.0
+pivot_offset = Vector2(70, 35)
+
+[node name="Panel" type="Panel" parent="SpeechBubble"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_1")
+
+[node name="Margin" type="MarginContainer" parent="SpeechBubble"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 6
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 6
+theme_override_constants/margin_bottom = 4
+
+[node name="Label" type="Label" parent="SpeechBubble/Margin"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_font_sizes/font_size = 14
+text = "👋 Hey!"
+horizontal_alignment = 1
+vertical_alignment = 1

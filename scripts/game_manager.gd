@@ -1,86 +1,162 @@
 extends Node2D
 
-# Game Manager: orchestrates the game loop, score, and NPC/wave interaction.
+# Game Manager: Master gameplay coordinator for scoring, streaks, NPC interactions, audio, and UI.
 
-# Scoring & Meter Tuning
-@export var start_embarrassment: float = 0.0
 @export var start_social_credit: float = 100.0
-@export var correct_wave_score: int = 10  # Points for correct wave (8-15 recommended)
-@export var correct_wave_credit: float = 5.0  # Social credit gain (3-8 recommended)
-@export var wrong_wave_embarrassment: float = 10.0  # Embarrassment increase (8-15 recommended)
-@export var wrong_wave_credit: float = 15.0  # Social credit loss (10-20 recommended)
-@export var social_credit_warning_threshold: float = 25.0  # Play warning sound when below this
+@export var start_embarrassment: float = 0.0
 
-var embarrassment: float = 0.0
-var social_credit: float = 100.0
 var score: int = 0
-var wave_detector: Node = null
-var sound_manager: Node = null
-var ui_manager: Node = null
+var social_credit: float = 100.0
+var embarrassment: float = 0.0
+var streak: int = 0
+var max_streak: int = 0
+var waves_greeted: int = 0
+var fakeouts_dodged: int = 0
+
+var is_game_over: bool = false
+
+@onready var npc_spawner: Node2D = $NPCSpawner if has_node("NPCSpawner") else null
+@onready var ui_manager: CanvasLayer = $UICanvas if has_node("UICanvas") else null
+@onready var visual_feedback: Node2D = $VisualFeedback if has_node("VisualFeedback") else null
+@onready var sound_manager: Node = $SoundManager if has_node("SoundManager") else null
+@onready var wave_detector: Node = $WaveDetector if has_node("WaveDetector") else null
+@onready var player: Node2D = $Player if has_node("Player") else null
 
 func _ready() -> void:
-	embarrassment = start_embarrassment
 	social_credit = start_social_credit
+	embarrassment = start_embarrassment
 	
-	# Setup wave detector
-	wave_detector = preload("res://scripts/wave_detector.gd").new()
-	wave_detector.name = "WaveDetector"
-	add_child(wave_detector)
-	if wave_detector.has_signal("wave_detected"):
-		wave_detector.wave_detected.connect(_on_wave_detected)
-	
-	# Setup sound manager
-	sound_manager = preload("res://scripts/sound_manager.gd").new()
-	sound_manager.name = "SoundManager"
-	add_child(sound_manager)
-	
-	# Get UI manager reference
-	if get_parent().has_node("UICanvas"):
-		ui_manager = get_parent().get_node("UICanvas")
-	
-	print("Game started: Social Credit = %.1f, Embarrassment = %.1f" % [social_credit, embarrassment])
+	if npc_spawner and not npc_spawner.npc_spawned.is_connected(_on_npc_spawned):
+		npc_spawner.npc_spawned.connect(_on_npc_spawned)
+		
+	if wave_detector and not wave_detector.player_performed_wave.is_connected(_on_player_wave):
+		wave_detector.player_performed_wave.connect(_on_player_wave)
+		
+	_update_ui()
+	print("[GameManager] Game started! Initial Social Credit: %.0f" % social_credit)
 
-func _physics_process(delta: float) -> void:
-	# Check if game is over
-	if social_credit <= 0:
-		print("Game Over! Social credit exhausted.")
-		_end_game()
+func _get_global() -> Node:
+	if has_node("/root/Global"):
+		return get_node("/root/Global")
+	return null
 
-func _on_wave_detected(is_correct: bool, npc: Node2D) -> void:
-	if is_correct:
-		# Correct wave
-		score += correct_wave_score
-		social_credit = min(social_credit + correct_wave_credit, 100)
-		print("✓ Correct wave! +%d points, +%.1f social credit. Total: %d / %.1f" % [correct_wave_score, correct_wave_credit, score, social_credit])
-		if sound_manager:
-			sound_manager.play_wave_success()
-	else:
-		# Wrong wave or missed wave
-		embarrassment += wrong_wave_embarrassment
-		social_credit = max(social_credit - wrong_wave_credit, 0)
-		print("✗ Wrong wave! +%.1f embarrassment, -%.1f social credit. Total: %.1f / %.1f" % [wrong_wave_embarrassment, wrong_wave_credit, embarrassment, social_credit])
-		if sound_manager:
-			sound_manager.play_wave_fail()
+func _on_npc_spawned(npc: Node2D) -> void:
+	if npc.has_signal("interaction_resolved") and not npc.interaction_resolved.is_connected(_on_npc_interaction_resolved):
+		npc.interaction_resolved.connect(_on_npc_interaction_resolved)
+
+func _on_player_wave(pos: Vector2) -> void:
+	if visual_feedback:
+		visual_feedback.spawn_wave_ripple(pos)
+
+func _on_npc_interaction_resolved(npc: Node2D, result: String) -> void:
+	if is_game_over:
+		return
+		
+	var mult = min(4, 1 + streak / 3)
+	var npc_pos = npc.global_position if npc else Vector2(400, 360)
+	var is_vip = npc.get("archetype") == 3 if npc else false
 	
-	# Check for social credit warning
-	if social_credit <= social_credit_warning_threshold and sound_manager:
+	match result:
+		"SUCCESS":
+			streak += (2 if is_vip else 1)
+			max_streak = max(max_streak, streak)
+			waves_greeted += 1
+			
+			var pts = (35 if is_vip else 15) * mult
+			score += pts
+			social_credit = min(100.0, social_credit + (10.0 if is_vip else 6.0))
+			embarrassment = max(0.0, embarrassment - 5.0)
+			
+			if visual_feedback:
+				visual_feedback.flash_screen(Color(0.2, 0.95, 0.5), 0.2)
+				var text = "+%d VIP WAVE!" % pts if is_vip else "+%d NICE WAVE!" % pts
+				if mult > 1:
+					text += " (%dx)" % mult
+				visual_feedback.spawn_floating_text(text, npc_pos, Color(0.2, 1.0, 0.7), 26)
+				
+			if sound_manager:
+				sound_manager.play_wave_success(streak)
+				
+		"DODGED":
+			streak += 1
+			max_streak = max(max_streak, streak)
+			fakeouts_dodged += 1
+			
+			var pts = 10 * mult
+			score += pts
+			social_credit = min(100.0, social_credit + 3.0)
+			embarrassment = max(0.0, embarrassment - 3.0)
+			
+			if visual_feedback:
+				visual_feedback.flash_screen(Color(0.0, 0.8, 1.0), 0.15)
+				var text = "+%d DODGED! Smooth" % pts
+				visual_feedback.spawn_floating_text(text, npc_pos, Color(0.3, 0.9, 1.0), 22)
+				
+			if sound_manager:
+				sound_manager.play_fake_out_detected()
+				
+		"CRINGE":
+			streak = 0
+			social_credit = max(0.0, social_credit - 15.0)
+			embarrassment = min(100.0, embarrassment + 15.0)
+			
+			if visual_feedback:
+				visual_feedback.screen_shake(14.0, 0.3)
+				visual_feedback.flash_screen(Color(1.0, 0.1, 0.3), 0.3)
+				visual_feedback.spawn_floating_text("-15 CRINGE! Awkward...", npc_pos, Color(1.0, 0.25, 0.4), 24)
+				
+			if sound_manager:
+				sound_manager.play_wave_fail()
+				
+		"MISSED":
+			streak = 0
+			social_credit = max(0.0, social_credit - 12.0)
+			embarrassment = min(100.0, embarrassment + 10.0)
+			
+			if visual_feedback:
+				visual_feedback.screen_shake(7.0, 0.2)
+				visual_feedback.spawn_floating_text("-12 MISSED! Ignored...", npc_pos, Color(0.9, 0.5, 0.2), 22)
+				
+			if sound_manager:
+				sound_manager.play_wave_fail()
+
+	# Audio warning for low credit
+	if social_credit <= 25.0 and social_credit > 0.0 and sound_manager:
 		sound_manager.play_social_credit_low()
-	
-	# End game if social credit reaches 0
-	if social_credit <= 0:
-		print("Game Over! Social credit exhausted.")
-		if sound_manager:
-			sound_manager.play_game_over()
-		await get_tree().create_timer(1.0).timeout
-		_end_game()
 
-func _end_game() -> void:
-	# Store final stats in Global and transition to EndScreen
-	if Global.has_method("set_final_stats"):
-		Global.set_final_stats({
+	_update_ui()
+	
+	if social_credit <= 0.0:
+		_trigger_game_over()
+
+func _update_ui() -> void:
+	if ui_manager and ui_manager.has_method("update_hud"):
+		ui_manager.update_hud(score, social_credit, embarrassment, streak)
+
+func _trigger_game_over() -> void:
+	if is_game_over:
+		return
+	is_game_over = true
+	print("[GameManager] GAME OVER! Final Score: %d" % score)
+	
+	if npc_spawner and npc_spawner.has_method("stop_spawning"):
+		npc_spawner.stop_spawning()
+		
+	if sound_manager:
+		sound_manager.play_game_over()
+		
+	# Store final stats in Global singleton
+	var global = _get_global()
+	if global and global.has_method("set_final_stats"):
+		global.set_final_stats({
 			"score": score,
 			"embarrassment": embarrassment,
-			"social_credit": social_credit
+			"social_credit": social_credit,
+			"max_streak": max_streak,
+			"waves_greeted": waves_greeted,
+			"fakeouts_dodged": fakeouts_dodged
 		})
-	print("[GameManager] Transitioning to end screen...")
+	
+	# Transition after brief pause so player feels the defeat
+	await get_tree().create_timer(1.2).timeout
 	get_tree().change_scene_to_file("res://scenes/EndScreen.tscn")

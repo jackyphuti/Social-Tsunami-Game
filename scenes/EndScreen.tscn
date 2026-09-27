@@ -1,73 +1,131 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=5 format=3]
+
 [ext_resource type="Script" path="res://scripts/end_screen.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/vaporwave_background.gd" id="2"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_Card"]
+bg_color = Color(0.1, 0.04, 0.2, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.2, 0.65, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.5)
+shadow_size = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_Btn"]
+bg_color = Color(0.18, 0.08, 0.32, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.0, 0.9, 0.95, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [node name="EndScreen" type="Control"]
 layout_mode = 3
-anchors_left = 0.0
-anchors_top = 0.0
-anchors_right = 1.0
-anchors_bottom = 1.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 script = ExtResource("1")
 
 [node name="Background" type="ColorRect" parent="."]
 layout_mode = 1
-anchors_left = 0.0
-anchors_top = 0.0
-anchors_right = 1.0
-anchors_bottom = 1.0
-color = Color(0.1, 0.05, 0.2, 1)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.08, 0.03, 0.16, 1)
+script = ExtResource("2")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="."]
+[node name="CenterContainer" type="CenterContainer" parent="."]
 layout_mode = 1
-anchors_left = 0.5
-anchors_top = 0.5
-anchors_right = 0.5
-anchors_bottom = 0.5
-offset_left = -150.0
-offset_top = -150.0
-offset_right = 150.0
-offset_bottom = 150.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="PanelContainer" parent="CenterContainer"]
+custom_minimum_size = Vector2(460, 420)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_Card")
+
+[node name="VBox" type="VBoxContainer" parent="CenterContainer/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 12
 alignment = 1
 
-[node name="Title" type="Label" parent="VBoxContainer"]
+[node name="Title" type="Label" parent="CenterContainer/Panel/VBox"]
 layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.15, 0.45, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_font_sizes/font_size = 42
 text = "GAME OVER"
-theme_override_font_sizes/font_size = 48
 horizontal_alignment = 1
 
-[node name="ScoreLabel" type="Label" parent="VBoxContainer"]
+[node name="ScoreLabel" type="Label" parent="CenterContainer/Panel/VBox"]
 layout_mode = 2
-text = "Score: 0"
+theme_override_colors/font_color = Color(1, 0.9, 0.35, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
 theme_override_font_sizes/font_size = 32
+text = "FINAL SCORE: 0"
 horizontal_alignment = 1
 
-[node name="EmbarrassmentLabel" type="Label" parent="VBoxContainer"]
+[node name="HighScoreLabel" type="Label" parent="CenterContainer/Panel/VBox"]
 layout_mode = 2
-text = "Embarrassment: 0%"
+theme_override_colors/font_color = Color(0.7, 0.75, 0.9, 1)
+theme_override_font_sizes/font_size = 18
+text = "BEST RECORD: 0"
+horizontal_alignment = 1
+
+[node name="RankLabel" type="Label" parent="CenterContainer/Panel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.95, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
 theme_override_font_sizes/font_size = 20
+text = "RANK: SOCIAL HERMIT"
 horizontal_alignment = 1
 
-[node name="SocialCreditLabel" type="Label" parent="VBoxContainer"]
+[node name="StatsDetailsLabel" type="Label" parent="CenterContainer/Panel/VBox"]
 layout_mode = 2
-text = "Social Credit: 0/100"
+theme_override_colors/font_color = Color(0.8, 0.8, 0.85, 1)
+theme_override_font_sizes/font_size = 14
+text = "Waves Reciprocated: 0  •  Fake-Outs Dodged: 0
+Highest Streak: 0"
+horizontal_alignment = 1
+
+[node name="Spacer" type="Control" parent="CenterContainer/Panel/VBox"]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+
+[node name="RestartButton" type="Button" parent="CenterContainer/Panel/VBox"]
+custom_minimum_size = Vector2(240, 48)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_hover_color = Color(0.0, 0.95, 1, 1)
 theme_override_font_sizes/font_size = 20
-horizontal_alignment = 1
+theme_override_styles/normal = SubResource("StyleBoxFlat_Btn")
+text = "PLAY AGAIN"
 
-[node name="Spacer" type="Control" parent="VBoxContainer"]
+[node name="MainMenuButton" type="Button" parent="CenterContainer/Panel/VBox"]
+custom_minimum_size = Vector2(240, 48)
 layout_mode = 2
-custom_minimum_size = Vector2(0, 30)
-
-[node name="RestartButton" type="Button" parent="VBoxContainer"]
-layout_mode = 2
-custom_minimum_size = Vector2(200, 50)
-text = "RESTART"
-theme_override_font_sizes/font_size = 24
-
-[node name="MainMenuButton" type="Button" parent="VBoxContainer"]
-layout_mode = 2
-custom_minimum_size = Vector2(200, 50)
+size_flags_horizontal = 4
+theme_override_colors/font_hover_color = Color(1, 0.3, 0.7, 1)
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBoxFlat_Btn")
 text = "MAIN MENU"
-theme_override_font_sizes/font_size = 24
 
-[connection signal="pressed" from="VBoxContainer/RestartButton" to="." method="_on_restart_pressed"]
-[connection signal="pressed" from="VBoxContainer/MainMenuButton" to="." method="_on_main_menu_pressed"]
+[connection signal="pressed" from="CenterContainer/Panel/VBox/RestartButton" to="." method="_on_restart_pressed"]
+[connection signal="pressed" from="CenterContainer/Panel/VBox/MainMenuButton" to="." method="_on_main_menu_pressed"]

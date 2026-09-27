@@ -1,59 +1,39 @@
 extends Node
 
-# Procedural Sprite Generator: creates vaporwave-style pastel NPC and player visuals at runtime.
+# Procedural Styling Generator for Vaporwave NPCs & Aesthetics
 
-# Pastel color palette for NPCs
-const PASTEL_COLORS = [
-	Color(0.9, 0.6, 0.8, 1.0),  # Pastel pink
-	Color(0.7, 0.8, 0.95, 1.0),  # Pastel blue
-	Color(0.85, 0.7, 0.9, 1.0),  # Pastel purple
-	Color(0.9, 0.8, 0.6, 1.0),   # Pastel yellow
-	Color(0.8, 0.9, 0.7, 1.0),   # Pastel green
+const PASTEL_SHIRT_COLORS = [
+	Color(0.95, 0.45, 0.70, 1.0), # Hot Pink
+	Color(0.35, 0.85, 0.95, 1.0), # Neon Cyan
+	Color(0.75, 0.55, 0.95, 1.0), # Pastel Lavender
+	Color(0.95, 0.85, 0.40, 1.0), # Sunset Gold
+	Color(0.40, 0.95, 0.70, 1.0), # Mint Green
+	Color(1.00, 0.60, 0.50, 1.0), # Coral Peach
 ]
 
-static func get_random_pastel_color() -> Color:
-	return PASTEL_COLORS[randi() % PASTEL_COLORS.size()]
+const HAIR_COLORS = [
+	Color(0.20, 0.10, 0.30, 1.0), # Midnight Indigo
+	Color(0.85, 0.20, 0.60, 1.0), # Magenta Glow
+	Color(0.15, 0.80, 0.85, 1.0), # Cyan Shock
+	Color(0.95, 0.75, 0.30, 1.0), # Blonde Sun
+	Color(0.60, 0.25, 0.80, 1.0), # Electric Violet
+	Color(0.85, 0.40, 0.20, 1.0), # Sunset Orange
+]
 
-static func create_npc_sprite() -> Image:
-	"""Create a simple 32x48 pastel-colored NPC sprite."""
-	var img = Image.create(32, 48, false, Image.FORMAT_RGBA8)
-	var color = get_random_pastel_color()
-	
-	# Fill body (top 30 pixels)
-	for y in range(30):
-		for x in range(32):
-			img.set_pixel(x, y, color)
-	
-	# Head (bottom 18 pixels)
-	var head_color = color.lightened(0.15)
-	for y in range(30, 48):
-		for x in range(32):
-			img.set_pixel(x, y, head_color)
-	
-	# Add simple gradient effect (left to right)
-	var gradient = color.darkened(0.1)
-	for y in range(48):
-		for x in range(8):
-			var blend = float(x) / 8.0
-			var pixel = color.lerp(gradient, blend * 0.3)
-			img.set_pixel(x, y, pixel)
-	
-	return img
+const SKIN_TONES = [
+	Color(1.00, 0.85, 0.75, 1.0),
+	Color(0.95, 0.78, 0.65, 1.0),
+	Color(0.82, 0.60, 0.45, 1.0),
+	Color(0.60, 0.40, 0.28, 1.0),
+	Color(0.42, 0.28, 0.20, 1.0),
+	Color(0.85, 0.80, 0.95, 1.0), # Alien vaporwave pastel lilac
+]
 
-static func create_arm_segment_sprite(width: int, height: int, base_color: Color = Color.WHITE) -> Image:
-	"""Create a simple arm segment sprite."""
-	var img = Image.create(width, height, false, Image.FORMAT_RGBA8)
-	var seg_color = base_color.lightened(0.1)
-	
-	# Fill with gradient
-	for y in range(height):
-		for x in range(width):
-			var y_blend = float(y) / float(height)
-			var pixel = base_color.lerp(seg_color, y_blend * 0.4)
-			img.set_pixel(x, y, pixel)
-	
-	return img
+static func get_random_shirt() -> Color:
+	return PASTEL_SHIRT_COLORS[randi() % PASTEL_SHIRT_COLORS.size()]
 
-static func sprite_to_texture(img: Image) -> ImageTexture:
-	"""Convert an Image to an ImageTexture."""
-	return ImageTexture.create_from_image(img)
+static func get_random_hair() -> Color:
+	return HAIR_COLORS[randi() % HAIR_COLORS.size()]
+
+static func get_random_skin() -> Color:
+	return SKIN_TONES[randi() % SKIN_TONES.size()]

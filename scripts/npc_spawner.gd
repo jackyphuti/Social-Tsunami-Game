@@ -1,34 +1,48 @@
 extends Node2D
 
-# NPC Spawner: spawns NPCs at intervals in waves.
+# NPC Spawner: Spawns NPCs at dynamic intervals at the right side of the screen.
+
+signal npc_spawned(npc: Node2D)
 
 @export var npc_scene: PackedScene = preload("res://scenes/NPC.tscn")
-@export var spawn_interval: float = 2.0
-@export var npcs_per_wave: int = 3
+@export var base_spawn_interval: float = 2.4
 
+var current_spawn_interval: float = 2.4
 var spawn_timer: float = 0.0
-var npcs_spawned: int = 0
+var npcs_spawned_count: int = 0
+var is_active: bool = true
 
 func _ready() -> void:
-	pass
+	current_spawn_interval = base_spawn_interval
+	# Spawn first NPC after a brief grace period (1.5 seconds)
+	spawn_timer = current_spawn_interval - 1.5
 
 func _physics_process(delta: float) -> void:
+	if not is_active:
+		return
+		
 	spawn_timer += delta
-	if spawn_timer >= spawn_interval:
+	if spawn_timer >= current_spawn_interval:
 		spawn_timer = 0.0
 		spawn_npc()
-		npcs_spawned += 1
 
-func spawn_npc() -> void:
+func spawn_npc() -> Node2D:
 	if not npc_scene:
-		return
+		return null
+		
 	var npc = npc_scene.instantiate() as Node2D
-	npc.position = Vector2(1200, randf_range(150, 350))
+	# Spawn at ground level off the right edge of 1280x720 screen
+	npc.position = Vector2(1380.0, 440.0)
 	add_child(npc)
+	npcs_spawned_count += 1
+	npc_spawned.emit(npc)
+	return npc
 
 func set_spawn_interval(value: float) -> void:
-	# Public setter so other managers can change the spawn rate safely.
-	spawn_interval = value
+	current_spawn_interval = max(0.9, value)
 
 func get_spawn_interval() -> float:
-	return spawn_interval
+	return current_spawn_interval
+
+func stop_spawning() -> void:
+	is_active = false

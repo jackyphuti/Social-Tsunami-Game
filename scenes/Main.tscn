@@ -1,40 +1,218 @@
-[gd_scene load_steps=9 format=3]
-[ext_resource type="PackedScene" path="res://scenes/Player.tscn" id="1"]
-[ext_resource type="Script" path="res://scripts/npc_spawner.gd" id="2"]
-[ext_resource type="Script" path="res://scripts/game_manager.gd" id="3"]
-[ext_resource type="Script" path="res://scripts/ui_manager.gd" id="4"]
-[ext_resource type="Script" path="res://scripts/visual_feedback.gd" id="5"]
+[gd_scene load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://scripts/game_manager.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/vaporwave_background.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/npc_spawner.gd" id="3"]
+[ext_resource type="PackedScene" path="res://scenes/Player.tscn" id="4"]
+[ext_resource type="Script" path="res://scripts/wave_detector.gd" id="5"]
 [ext_resource type="Script" path="res://scripts/difficulty_manager.gd" id="6"]
-[ext_resource type="Script" path="res://scripts/vaporwave_background.gd" id="7"]
-[ext_resource type="PackedScene" path="res://scenes/PauseMenu.tscn" id="8"]
+[ext_resource type="Script" path="res://scripts/sound_manager.gd" id="7"]
+[ext_resource type="Script" path="res://scripts/visual_feedback.gd" id="8"]
+[ext_resource type="Script" path="res://scripts/ui_manager.gd" id="9"]
+[ext_resource type="PackedScene" path="res://scenes/PauseMenu.tscn" id="10"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_BarBg"]
+bg_color = Color(0.12, 0.05, 0.22, 0.85)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.4, 0.2, 0.6, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_EmbFill"]
+bg_color = Color(1, 0.15, 0.45, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_CreditFill"]
+bg_color = Color(0.0, 0.95, 0.85, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [node name="Main" type="Node2D"]
-script = ExtResource("3")
+script = ExtResource("1")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(640, 360)
 
 [node name="VaporwaveBackground" type="ColorRect" parent="."]
-anchor_left = 0.0
-anchor_top = 0.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-color = Color(0.1, 0.05, 0.2, 1)
-script = ExtResource("7")
-z_index = -1
+z_index = -10
+offset_right = 1280.0
+offset_bottom = 720.0
+mouse_filter = 2
+color = Color(0.08, 0.03, 0.16, 1)
+script = ExtResource("2")
 
 [node name="NPCSpawner" type="Node2D" parent="."]
-script = ExtResource("2")
-spawn_interval = 2.0
-npcs_per_wave = 3
+script = ExtResource("3")
 
-[node name="Player" parent="." instance=ExtResource("1")]
-position = Vector2(320, 256)
+[node name="Player" parent="." instance=ExtResource("4")]
+position = Vector2(260, 440)
 
-[node name="UICanvas" type="CanvasLayer" parent="."]
-script = ExtResource("4")
-
-[node name="VisualFeedback" type="Node" parent="."]
+[node name="WaveDetector" type="Node" parent="."]
 script = ExtResource("5")
 
 [node name="DifficultyManager" type="Node" parent="."]
 script = ExtResource("6")
 
-[node name="PauseMenu" parent="." instance=ExtResource("8")]
+[node name="SoundManager" type="Node" parent="."]
+script = ExtResource("7")
+
+[node name="VisualFeedback" type="Node2D" parent="."]
+script = ExtResource("8")
+
+[node name="FlashRect" type="ColorRect" parent="VisualFeedback"]
+modulate = Color(1, 1, 1, 0)
+offset_right = 1280.0
+offset_bottom = 720.0
+mouse_filter = 2
+
+[node name="UICanvas" type="CanvasLayer" parent="."]
+script = ExtResource("9")
+
+[node name="LowCreditVignette" type="ColorRect" parent="UICanvas"]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(1, 0.05, 0.2, 0.25)
+
+[node name="HUD" type="Control" parent="UICanvas"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="TopLeft" type="VBoxContainer" parent="UICanvas/HUD"]
+layout_mode = 0
+offset_left = 25.0
+offset_top = 20.0
+offset_right = 325.0
+offset_bottom = 75.0
+theme_override_constants/separation = 4
+
+[node name="EmbarrassmentLabel" type="Label" parent="UICanvas/HUD/TopLeft"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.35, 0.65, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_font_sizes/font_size = 15
+text = "EMBARRASSMENT: 0%"
+
+[node name="EmbarrassmentBar" type="ProgressBar" parent="UICanvas/HUD/TopLeft"]
+custom_minimum_size = Vector2(300, 18)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_BarBg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_EmbFill")
+show_percentage = false
+
+[node name="TopCenter" type="VBoxContainer" parent="UICanvas/HUD"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -175.0
+offset_top = 20.0
+offset_right = 175.0
+offset_bottom = 75.0
+grow_horizontal = 2
+theme_override_constants/separation = 4
+
+[node name="CreditLabel" type="Label" parent="UICanvas/HUD/TopCenter"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 1, 0.9, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_font_sizes/font_size = 15
+text = "SOCIAL CREDIT: 100 / 100"
+horizontal_alignment = 1
+
+[node name="CreditBar" type="ProgressBar" parent="UICanvas/HUD/TopCenter"]
+custom_minimum_size = Vector2(350, 18)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_BarBg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_CreditFill")
+value = 100.0
+show_percentage = false
+
+[node name="TopRight" type="VBoxContainer" parent="UICanvas/HUD"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -260.0
+offset_top = 20.0
+offset_right = -25.0
+offset_bottom = 85.0
+grow_horizontal = 0
+alignment = 2
+
+[node name="ScoreLabel" type="Label" parent="UICanvas/HUD/TopRight"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.4, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_font_sizes/font_size = 22
+text = "SCORE: 0"
+horizontal_alignment = 2
+
+[node name="StreakLabel" type="Label" parent="UICanvas/HUD/TopRight"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.25, 0.8, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_font_sizes/font_size = 16
+text = "🔥 STREAK: 0"
+horizontal_alignment = 2
+
+[node name="WarningBanner" type="Label" parent="UICanvas/HUD"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = -180.0
+offset_right = 250.0
+offset_bottom = -140.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.15, 0.35, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_font_sizes/font_size = 20
+text = "⚠️ WARNING: SOCIAL CREDIT DEPLETING! ⚠️"
+horizontal_alignment = 1
+
+[node name="TutorialBanner" type="Label" parent="UICanvas/HUD"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -400.0
+offset_top = -45.0
+offset_right = 400.0
+offset_bottom = -15.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.7, 0.75, 0.9, 0.85)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_font_sizes/font_size = 14
+text = "[🖱️ HOLD LMB & DRAG HAND TO WAVE] • [ESC] PAUSE"
+horizontal_alignment = 1
+
+[node name="PauseMenu" parent="." instance=ExtResource("10")]

@@ -1,92 +1,91 @@
-extends Node2D
+extends Node
 
-# Wave Detector: listens to NPC signals and checks if player waves correctly.
-# Improved with directional bias (requires upward hand motion).
+# Wave Detector: Monitors hand velocity, height, and oscillation to recognize player waving.
+# Triggers resolution on active NPCs in the interaction zone.
 
-@export var wave_detection_threshold: float = 0.5
-@export var upward_bias_required: bool = true
+signal player_performed_wave(pos: Vector2)
+
+@export var wave_vel_threshold: float = 200.0
+@export var wave_cooldown: float = 0.25
 
 var player: Node2D = null
-var current_npc: Node2D = null
-var player_waved: bool = false
-var wave_window_open: bool = false
-var hand_position_start: Vector2 = Vector2.ZERO
-var ui_manager: Node = null
+var npc_spawner: Node2D = null
+var game_manager: Node = null
 
-signal wave_detected(is_correct: bool, npc: Node2D)
+var wave_timer: float = 0.0
+var prev_vel_x: float = 0.0
+var direction_changes: int = 0
+var oscillation_window: float = 0.0
 
 func _ready() -> void:
-	# Get player reference
-	if get_parent().has_node("Player"):
-		player = get_parent().get_node("Player")
-	
-	# Get UI manager reference
-	if get_parent().has_node("UICanvas"):
-		ui_manager = get_parent().get_node("UICanvas")
-	
-	# Connect to NPCs as they spawn
-	if get_parent().has_node("NPCSpawner"):
-		var spawner = get_parent().get_node("NPCSpawner")
-		spawner.child_entered_tree.connect(_on_npc_spawned)
+	if get_parent():
+		player = get_parent().get_node_or_null("Player")
+		npc_spawner = get_parent().get_node_or_null("NPCSpawner")
+		game_manager = get_parent()
 
-func _on_npc_spawned(node: Node) -> void:
-	# Connect to NPC signals
-	if node.has_signal("on_wave_start") and node.has_signal("on_wave_end"):
-		node.on_wave_start.connect(_on_npc_wave_start.bindv([node]))
-		node.on_wave_end.connect(_on_npc_wave_end.bindv([node]))
-
-func _on_npc_wave_start(is_fake_out: bool, npc: Node2D) -> void:
-	current_npc = npc
-	wave_window_open = true
-	player_waved = false
-	if player and player.has_node("Arm/Hand"):
-		hand_position_start = player.get_node("Arm/Hand").global_position
-
-func _on_npc_wave_end(npc: Node2D) -> void:
-	if current_npc == npc:
-		wave_window_open = false
+func _physics_process(delta: float) -> void:
+	if not player:
+		return
 		
-		# Determine if the wave was correct
-		var player_did_wave = player_waved
-		var npc_is_fake = npc.get_is_fake_out()
-		
-		# Real wave: player should have waved
-		# Fake-out: player should NOT have waved
-		var is_correct = (not npc_is_fake and player_did_wave) or (npc_is_fake and not player_did_wave)
-		
-		wave_detected.emit(is_correct, npc)
-		
-		# Show feedback in UI
-		if ui_manager:
-			if is_correct:
-				ui_manager.show_wave_feedback("✓ Correct!", Color.GREEN, 1.0)
-			else:
-				ui_manager.show_wave_feedback("✗ Wrong!", Color.RED, 1.0)
-		
-		current_npc = null
-
-func check_player_waved() -> bool:
-	# Improved heuristic: check if hand moved significantly with upward bias
-	if not player or not player.has_node("Arm/Hand"):
-		return false
+	wave_timer += delta
+	oscillation_window += delta
 	
-	var hand = player.get_node("Arm/Hand")
-	var velocity = hand.linear_velocity
-	var total_velocity = velocity.length()
+	if oscillation_window > 0.6:
+		oscillation_window = 0.0
+		direction_changes = 0
+		
+	if not player.has_method("get_hand_velocity"):
+		return
+		
+	var is_dragging = player.is_dragging() if player.has_method("is_dragging") else false
+	if not is_dragging:
+		return
+		
+	var hand_vel = player.get_hand_velocity()
+	var hand_pos = player.get_hand_global_pos()
+	var shoulder_y = player.global_position.y - 20.0
 	
-	# Check if velocity exceeds threshold
-	if total_velocity < wave_detection_threshold:
-		return false
+	# Check if hand is raised (above waist level)
+	var is_hand_raised = hand_pos.y < (shoulder_y + 60.0)
+	var total_speed = hand_vel.length()
 	
-	# If upward bias is required, check if hand is moving upward
-	if upward_bias_required:
-		# Upward = negative Y (Godot coordinate system)
-		return velocity.y < -0.2  # Significant upward component
+	# Detect side-to-side oscillation
+	if prev_vel_x * hand_vel.x < -1000.0: # Reversal with speed
+		direction_changes += 1
+		
+	prev_vel_x = hand_vel.x
 	
-	return true
+	# Condition to qualify as a wave gesture:
+	# 1. Hand raised
+	# 2. Significant speed (flinging or shaking) OR back-and-forth oscillation
+	var is_waving = is_hand_raised and (total_speed > wave_vel_threshold or direction_changes >= 1)
+	
+	if is_waving and wave_timer >= wave_cooldown:
+		wave_timer = 0.0
+		direction_changes = 0
+		_on_wave_action(hand_pos)
 
-func _input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-		if wave_window_open:
-			if check_player_waved():
-				player_waved = true
+func _on_wave_action(hand_pos: Vector2) -> void:
+	player_performed_wave.emit(hand_pos)
+	
+	# Find active NPC in interaction zone (closest to player)
+	var target_npc: Node2D = _get_closest_active_npc()
+	if target_npc and target_npc.has_method("player_waved_at_me"):
+		target_npc.player_waved_at_me()
+
+func _get_closest_active_npc() -> Node2D:
+	if not npc_spawner:
+		return null
+		
+	var best_npc: Node2D = null
+	var min_dist: float = 99999.0
+	var player_x = player.global_position.x if player else 260.0
+	
+	for child in npc_spawner.get_children():
+		if child.get("is_active_interaction") == true and not child.get("has_resolved"):
+			var dist = abs(child.global_position.x - player_x)
+			if dist < min_dist:
+				min_dist = dist
+				best_npc = child
+				
+	return best_npc

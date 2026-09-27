@@ -1,101 +1,70 @@
 extends CanvasLayer
 
-# UI Manager: displays Embarrassment Meter, Social Credit, and Score.
-# Attach this script to a CanvasLayer in Main.tscn.
-
-@onready var embarrassment_progress: ProgressBar = ProgressBar.new()
-@onready var social_credit_progress: ProgressBar = ProgressBar.new()
-@onready var score_label: Label = Label.new()
-@onready var wave_feedback_label: Label = Label.new()
+# UI Manager: Renders retro vaporwave HUD with Social Credit, Embarrassment, Score, Streak, and Alerts.
 
 var game_manager: Node = null
 
+@onready var embarrassment_bar: ProgressBar = $HUD/TopLeft/EmbarrassmentBar if has_node("HUD/TopLeft/EmbarrassmentBar") else null
+@onready var embarrassment_label: Label = $HUD/TopLeft/EmbarrassmentLabel if has_node("HUD/TopLeft/EmbarrassmentLabel") else null
+
+@onready var credit_bar: ProgressBar = $HUD/TopCenter/CreditBar if has_node("HUD/TopCenter/CreditBar") else null
+@onready var credit_label: Label = $HUD/TopCenter/CreditLabel if has_node("HUD/TopCenter/CreditLabel") else null
+
+@onready var score_label: Label = $HUD/TopRight/ScoreLabel if has_node("HUD/TopRight/ScoreLabel") else null
+@onready var streak_label: Label = $HUD/TopRight/StreakLabel if has_node("HUD/TopRight/StreakLabel") else null
+
+@onready var warning_banner: Label = $HUD/WarningBanner if has_node("HUD/WarningBanner") else null
+@onready var low_credit_vignette: ColorRect = $LowCreditVignette if has_node("LowCreditVignette") else null
+
+var warning_pulse_time: float = 0.0
+
 func _ready() -> void:
-	# Find the game manager in the parent scene
-	if get_parent().has_node("GameManager"):
-		game_manager = get_parent().get_node("GameManager")
-	
-	# Setup Embarrassment Progress Bar (top-left)
-	embarrassment_progress.name = "EmbarrassmentProgress"
-	embarrassment_progress.anchor_left = 0.0
-	embarrassment_progress.anchor_top = 0.0
-	embarrassment_progress.offset_left = 10
-	embarrassment_progress.offset_top = 10
-	embarrassment_progress.custom_minimum_size = Vector2(250, 20)
-	embarrassment_progress.modulate = Color.RED
-	embarrassment_progress.value = 0
-	embarrassment_progress.max_value = 100
-	add_child(embarrassment_progress)
-	
-	# Embarrassment Label
-	var emb_label = Label.new()
-	emb_label.text = "Embarrassment:"
-	emb_label.anchor_left = 0.0
-	emb_label.anchor_top = 0.0
-	emb_label.offset_left = 10
-	emb_label.offset_top = -15
-	add_child(emb_label)
-	
-	# Setup Social Credit Progress Bar (top-center)
-	social_credit_progress.name = "SocialCreditProgress"
-	social_credit_progress.anchor_left = 0.0
-	social_credit_progress.anchor_top = 0.0
-	social_credit_progress.offset_left = 10
-	social_credit_progress.offset_top = 40
-	social_credit_progress.custom_minimum_size = Vector2(250, 20)
-	social_credit_progress.modulate = Color.GREEN
-	social_credit_progress.value = 100
-	social_credit_progress.max_value = 100
-	add_child(social_credit_progress)
-	
-	# Social Credit Label
-	var sc_label = Label.new()
-	sc_label.text = "Social Credit:"
-	sc_label.anchor_left = 0.0
-	sc_label.anchor_top = 0.0
-	sc_label.offset_left = 10
-	sc_label.offset_top = 25
-	add_child(sc_label)
-	
-	# Setup Score Label (top-right)
-	score_label.text = "Score: 0"
-	score_label.anchor_left = 1.0
-	score_label.anchor_top = 0.0
-	score_label.offset_left = -150
-	score_label.offset_top = 10
-	add_child(score_label)
-	
-	# Setup Wave Feedback Label (center, appears briefly)
-	wave_feedback_label.text = ""
-	wave_feedback_label.anchor_left = 0.5
-	wave_feedback_label.anchor_top = 0.5
-	wave_feedback_label.offset_left = -100
-	wave_feedback_label.offset_top = -20
-	wave_feedback_label.custom_minimum_size = Vector2(200, 40)
-	wave_feedback_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	wave_feedback_label.modulate = Color.WHITE
-	add_child(wave_feedback_label)
+	if get_parent():
+		game_manager = get_parent()
+	if warning_banner:
+		warning_banner.visible = false
+	if low_credit_vignette:
+		low_credit_vignette.visible = false
 
-func _physics_process(delta: float) -> void:
-	if not game_manager:
-		return
-	
-	# Update embarrassment bar
-	embarrassment_progress.value = game_manager.embarrassment
-	
-	# Update social credit bar
-	social_credit_progress.value = game_manager.social_credit
-	
-	# Update score label
-	score_label.text = "Score: %d" % game_manager.score
+func _process(delta: float) -> void:
+	if game_manager:
+		var credit = game_manager.get("social_credit")
+		if credit != null and credit <= 25.0:
+			warning_pulse_time += delta * 5.0
+			var pulse = 0.4 + 0.3 * sin(warning_pulse_time)
+			if warning_banner:
+				warning_banner.visible = true
+				warning_banner.modulate.a = pulse
+			if low_credit_vignette:
+				low_credit_vignette.visible = true
+				low_credit_vignette.color = Color(1.0, 0.05, 0.2, pulse * 0.4)
+		else:
+			if warning_banner:
+				warning_banner.visible = false
+			if low_credit_vignette:
+				low_credit_vignette.visible = false
 
-func show_wave_feedback(text: String, color: Color, duration: float = 1.0) -> void:
-	wave_feedback_label.text = text
-	wave_feedback_label.modulate = color
-	wave_feedback_label.modulate.a = 1.0
-	
-	# Fade out after duration
-	var tween = create_tween()
-	tween.tween_callback(func(): wave_feedback_label.modulate.a = 1.0)
-	tween.tween_property(wave_feedback_label, "modulate:a", 0.0, duration)
-	tween.tween_callback(func(): wave_feedback_label.text = "")
+func update_hud(score: int, credit: float, embarrassment: float, streak: int) -> void:
+	if embarrassment_bar:
+		embarrassment_bar.value = embarrassment
+	if embarrassment_label:
+		embarrassment_label.text = "EMBARRASSMENT: %d%%" % int(embarrassment)
+		
+	if credit_bar:
+		credit_bar.value = credit
+	if credit_label:
+		credit_label.text = "SOCIAL CREDIT: %d / 100" % int(credit)
+		
+	if score_label:
+		score_label.text = "SCORE: %d" % score
+		
+	if streak_label:
+		if streak > 1:
+			var mult = min(4, 1 + streak / 3)
+			streak_label.text = "🔥 STREAK: %d (%dx PTS)" % [streak, mult]
+			streak_label.visible = true
+			var tween = create_tween()
+			tween.tween_property(streak_label, "scale", Vector2(1.15, 1.15), 0.1)
+			tween.tween_property(streak_label, "scale", Vector2.ONE, 0.1)
+		else:
+			streak_label.visible = false
